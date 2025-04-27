@@ -19,6 +19,7 @@ import VpnKeyOutlinedIcon from "@mui/icons-material/VpnKeyOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import { Link, useLocation } from "react-router-dom";
 import { tokens } from "../theme";
+import { useSelector } from "react-redux";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -36,40 +37,11 @@ const Sidebar = () => {
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selected, setSelected] = useState("");
+  const auth = useSelector((state) => state.auth);
 
   const location = useLocation();
 
   const menuSections = [
-    {
-      items: [{ title: "Dashboard", to: "/dashboard", icon: <GridViewOutlinedIcon /> }],
-    },
-    {
-      title: "Transaksi",
-      items: [
-        { title: "Penjualan A", to: "/penjualan", icon: <HandshakeOutlinedIcon /> },
-        { title: "Penjualan B", to: "/penjualan", icon: <ShoppingBagOutlinedIcon /> },
-        { title: "Pencairan", to: "/pencairan", icon: <MonetizationOnOutlinedIcon /> },
-        { title: "Pengembalian", to: "/pengembalian", icon: <KeyboardReturnOutlinedIcon /> },
-        { title: "Pengeluaran", to: "/pengeluaran", icon: <PaymentOutlinedIcon /> },
-      ],
-    },
-    {
-      title: "Produksi",
-      items: [
-        { title: "Pembelian Bahan", to: "/pembelian-bahan", icon: <GestureOutlinedIcon /> },
-        { title: "Produksi", to: "/produksi", icon: <WarehouseOutlinedIcon /> },
-      ],
-    },
-    {
-      title: "Master",
-      items: [
-        { title: "Customer", to: "/customer", icon: <GroupsOutlinedIcon /> },
-        { title: "Produk", to: "/produk", icon: <CheckroomOutlinedIcon /> },
-        { title: "Jenis Pengeluaran", to: "/jenis-pengeluaran", icon: <SellOutlinedIcon /> },
-        { title: "Bahan Baku", to: "/bahan-baku", icon: <EggOutlinedIcon /> },
-        { title: "Unit Bisnis", to: "/unit-bisnis", icon: <StorefrontOutlinedIcon /> },
-      ],
-    },
     {
       title: "Settings",
       items: [
@@ -156,10 +128,12 @@ const Sidebar = () => {
               </Box>
               <Box textAlign="center">
                 <Typography variant="h3" color={colors.grey[100]} fontWeight="bold" sx={{ m: "10px 0 0 0" }}>
-                  Zidan
+                  {auth.user.name.split(" ")[0]}
                 </Typography>
                 <Typography variant="h6" color={colors.greenAccent[500]}>
-                  Super Admin
+                  {auth.roles.map((role, index) => (
+                    <div key={index}>{role}</div>
+                  ))}
                 </Typography>
               </Box>
             </Box>

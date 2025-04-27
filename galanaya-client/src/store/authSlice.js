@@ -5,6 +5,7 @@ const initialState = {
   token: null,
   roles: [],
   permissions: [],
+  is_active: null, // tambahkan di sini
 };
 
 const authSlice = createSlice({
@@ -12,11 +13,12 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setAuth: (state, action) => {
-      const { user, access_token, roles, permissions } = action.payload;
+      const { user, access_token, roles, permissions, is_active } = action.payload;
       state.user = user;
       state.token = access_token;
       state.roles = roles;
       state.permissions = permissions;
+      state.is_active = is_active; // tambahkan di sini
 
       localStorage.setItem("auth", JSON.stringify(action.payload));
     },
@@ -25,6 +27,7 @@ const authSlice = createSlice({
       state.token = null;
       state.roles = [];
       state.permissions = [];
+      state.is_active = null;
 
       localStorage.removeItem("auth");
     },

@@ -12,7 +12,6 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Hapus cache permission
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
@@ -22,7 +21,6 @@ class RolePermissionSeeder extends Seeder
             'update_users',
         ];
 
-        // Buat permission dengan UUID
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
@@ -32,12 +30,10 @@ class RolePermissionSeeder extends Seeder
             ]);
         }
 
-        // Define roles and their permissions
         $roles = [
-            'superadmin' => $permissions, // assign all permissions to superadmin
+            'superadmin' => $permissions,
         ];
 
-        // Buat roles dengan UUID
         foreach ($roles as $roleName => $rolePermissions) {
             $role = Role::firstOrCreate([
                 'name' => $roleName,
@@ -46,10 +42,8 @@ class RolePermissionSeeder extends Seeder
                 'id' => Str::uuid(),
             ]);
 
-            // Ambil permission berdasarkan nama
             $permissionModels = Permission::whereIn('name', $rolePermissions)->get();
 
-            // Sync permissions dengan UUID
             $role->syncPermissions($permissionModels);
         }
     }

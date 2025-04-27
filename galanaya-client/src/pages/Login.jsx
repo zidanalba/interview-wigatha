@@ -11,7 +11,7 @@ const Login = () => {
   const colors = tokens(theme.palette.mode);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -24,7 +24,24 @@ const Login = () => {
 
       // 3. Sukses login → arahkan ke dashboard
       dispatch(setAuth(res.data));
-      navigate("/dashboard");
+      console.log(res.data, "res login");
+      navigate("/users");
+    } catch (err) {
+      console.error(err);
+      alert("Login gagal");
+    }
+  };
+
+  const handleRegister = async () => {
+    try {
+      const res = await api.post("/register", {
+        name,
+        email,
+        password,
+      });
+
+      dispatch(setAuth(res.data));
+      navigate("/registered");
     } catch (err) {
       console.error(err);
       alert("Login gagal");
@@ -52,11 +69,6 @@ const Login = () => {
           <Stack spacing={2}>
             <TextField label="Email" fullWidth color="grey" value={email} onChange={(e) => setEmail(e.target.value)} />
             <TextField label="Password" type="password" fullWidth color="grey" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <Typography variant="body2" textAlign="right">
-              <Link to="/forget-password" style={{ textDecoration: "none", color: "#1976d2" }}>
-                Lupa Password?
-              </Link>
-            </Typography>
             <Button onClick={handleLogin} variant="contained" size="large" fullWidth color="secondary">
               Sign In
             </Button>

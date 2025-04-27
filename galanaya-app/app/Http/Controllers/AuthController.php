@@ -23,8 +23,37 @@ class AuthController extends Controller
             'access_token' => $token,
             'user' => $user->only(['id', 'name', 'email']),
             'roles' => $user->getRoleNames(),
+            'is_active' => $user->is_active,
             'permissions' => $user->getAllPermissions()->pluck('name'),
         ]);
     }
 
+    public function register(Request $request) {
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|email|max:255|unique:users,email',
+            'password'    => 'required|string',
+            ]);
+
+        $user = new User();
+        $user->name     = $validated['name'];
+        $user->email    = $validated['email'];
+        $user->password = Hash::make($validated['password']);
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'User registered successfully.',
+            'data' => $user,
+        ], 201);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully.'
+        ]);
+    }
 }

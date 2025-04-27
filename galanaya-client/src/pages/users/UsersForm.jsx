@@ -298,18 +298,6 @@ const UsersForm = () => {
                   </Typography>
                 )}
               </FormGroup>
-
-              <Box mt={1}>
-                <Button
-                  variant="text"
-                  color="success"
-                  size="small"
-                  startIcon={<AddOutlinedIcon />}
-                  onClick={() => navigate("/unit-bisnis/add")} // ganti dengan route buatanmu
-                >
-                  Buat Unit Bisnis Baru
-                </Button>
-              </Box>
             </Box>
             <Box width="100%">
               <Typography variant="h5">Roles</Typography>
