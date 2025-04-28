@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography, styled, Switch, CircularProgress } from "@mui/material";
+import { Box, Button, Stack, Typography, styled, Switch, CircularProgress, IconButton, AccordionActions } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Fade from "@mui/material/Fade";
@@ -7,11 +7,14 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails, { accordionDetailsClasses } from "@mui/material/AccordionDetails";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import api from "../../utils/axios";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 
 const RoleAkses = () => {
   const [expanded, setExpanded] = useState(false);
 
   const [form, setForm] = useState("");
+
+  const [isEditing, setIsEditing] = useState(null);
 
   const [rolesPermissions, setRolesPermissions] = useState([]);
 
@@ -60,6 +63,21 @@ const RoleAkses = () => {
 
   const handleExpansion = (panel) => {
     setExpanded((prevExpanded) => (prevExpanded === panel ? false : panel));
+  };
+
+  const handleEditRole = (role) => {
+    setIsEditing(role.id);
+    setForm({ ...role });
+  };
+
+  const handleUpdateRole = async () => {
+    try {
+      await api.put(`master/roles/${form.id}`, form);
+      loadRolesPermissions();
+      setIsEditing(null);
+    } catch (err) {
+      alert("Gagal mengupdate role");
+    }
   };
 
   const [loadingPermissions, setLoadingPermissions] = useState(true);
@@ -153,7 +171,9 @@ const RoleAkses = () => {
               ]}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel1-content" id={`panel-${role.id}`}>
-                <Typography component="span">{role.name}</Typography>
+                <Typography mr={2} component="span">
+                  <strong>{role.name}</strong>
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Box display="flex" flexDirection="column" gap={2}>
@@ -165,7 +185,17 @@ const RoleAkses = () => {
                         <Typography variant="body2">{permission.name}</Typography>
                         <Stack direction="row" spacing={1} alignItems="center">
                           <Typography color={!isPermissionAssigned ? "error" : "textSecondary"}>Tidak Aktif</Typography>
-                          <AntSwitch inputProps={{ "aria-label": "ant design" }} checked={isPermissionAssigned} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
+                          <AntSwitch
+                            onChange={(e) =>
+                              setForm({
+                                ...form,
+                                permissions: form.permissions.map((perm) => (perm.id === permission.id ? { ...perm, is_active: e.target.checked } : perm)),
+                              })
+                            }
+                            disabled={isEditing !== role.id}
+                            inputProps={{ "aria-label": "ant design" }}
+                            checked={isPermissionAssigned}
+                          />
                           <Typography color={isPermissionAssigned ? "success" : "textSecondary"}>Aktif</Typography>
                         </Stack>
                       </Box>
@@ -173,6 +203,17 @@ const RoleAkses = () => {
                   })}
                 </Box>
               </AccordionDetails>
+              <AccordionActions>
+                {isEditing === role.id ? (
+                  <Button variant="contained" color="secondary" onClick={handleUpdateRole}>
+                    Update
+                  </Button>
+                ) : (
+                  <Button variant="outlined" color="secondary" onClick={() => handleEditRole(role)}>
+                    Edit
+                  </Button>
+                )}
+              </AccordionActions>
             </Accordion>
           ))
         )}
