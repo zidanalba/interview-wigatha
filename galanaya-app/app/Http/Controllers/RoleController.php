@@ -41,4 +41,27 @@ class RoleController extends Controller
             'permissions' => $role->permissions->pluck('name'),
         ], 201);
     }
+
+    public function getRolesAndPermissions(Request $request)
+    {
+        $roles = Role::with('permissions')->get();
+
+        $data = $roles->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'name' => $role->name,
+                'permissions' => $role->permissions->map(function ($permission) {
+                    return [
+                        'id' => $permission->id,
+                        'name' => $permission->name,
+                    ];
+                }),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
+    }
 }

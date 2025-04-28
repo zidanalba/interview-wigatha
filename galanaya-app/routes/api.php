@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BusinessUnitController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -41,6 +42,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::group(['prefix' => 'role'], function () {
             Route::get('/', [RoleController::class, 'getRoles']);
             Route::post('/', [RoleController::class, 'storeRole']);
+        });
+
+        Route::group(['prefix' => 'roles-and-permissions'], function () {
+            Route::get('/', [RoleController::class, 'getRolesAndPermissions']);
+        });
+
+        Route::group(['prefix' => 'permission'], function () {
+            Route::get('/', [PermissionController::class, 'getPermissions']);
         });
 
         Route::group(['prefix' => 'business-unit'], function () {
