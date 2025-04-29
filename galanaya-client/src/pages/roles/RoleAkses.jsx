@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography, styled, Switch, CircularProgress, IconButton, AccordionActions } from "@mui/material";
+import { Box, Button, Stack, Typography, styled, Switch, CircularProgress, IconButton, AccordionActions, Alert, Snackbar } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Fade from "@mui/material/Fade";
@@ -19,6 +19,15 @@ const RoleAkses = () => {
   const [rolesPermissions, setRolesPermissions] = useState([]);
 
   const [permissions, setPermissions] = useState([]);
+
+  const [openSuccessSnackbar, setOpenSuccessSnackbar] = useState(false);
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpenSuccessSnackbar(false);
+  };
 
   const AntSwitch = styled(Switch)(({ theme }) => ({
     width: 28,
@@ -67,12 +76,19 @@ const RoleAkses = () => {
 
   const handleEditRole = (role) => {
     setIsEditing(role.id);
-    setForm({ ...role });
+    console.log(role, "role that being edited");
+    setForm({
+      ...form,
+      role,
+    });
   };
 
   const handleUpdateRole = async () => {
     try {
-      await api.put(`master/roles/${form.id}`, form);
+      console.log(form, "form after edit");
+      await api.put(`master/role/${form.role.id}`, form);
+      setOpenSuccessSnackbar(true);
+      setForm({});
       loadRolesPermissions();
       setIsEditing(null);
     } catch (err) {
@@ -119,6 +135,7 @@ const RoleAkses = () => {
     try {
       const data = await fetchPermissions();
       setPermissions(data);
+      console.log(data, "permissions");
     } catch (err) {
       alert("Gagal fetch data permissions");
     } finally {
@@ -178,7 +195,9 @@ const RoleAkses = () => {
               <AccordionDetails>
                 <Box display="flex" flexDirection="column" gap={2}>
                   {permissions.map((permission) => {
-                    const isPermissionAssigned = role.permissions.some((rolePermission) => rolePermission.id === permission.id);
+                    const isEditingThisRole = isEditing === role.id;
+
+                    const isPermissionAssigned = isEditingThisRole ? form.role?.permissions?.some((perm) => perm.id === permission.id) : role.permissions.some((rolePermission) => rolePermission.id === permission.id);
 
                     return (
                       <Box key={permission.id} display="flex" justifyContent="space-between" alignItems="center">
@@ -186,12 +205,19 @@ const RoleAkses = () => {
                         <Stack direction="row" spacing={1} alignItems="center">
                           <Typography color={!isPermissionAssigned ? "error" : "textSecondary"}>Tidak Aktif</Typography>
                           <AntSwitch
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              if (!isEditingThisRole) return; // Cegah perubahan kalau tidak sedang edit
+
+                              const updatedPermissions = e.target.checked ? [...form.role.permissions, { id: permission.id, name: permission.name }] : form.role.permissions.filter((perm) => perm.id !== permission.id);
+
                               setForm({
                                 ...form,
-                                permissions: form.permissions.map((perm) => (perm.id === permission.id ? { ...perm, is_active: e.target.checked } : perm)),
-                              })
-                            }
+                                role: {
+                                  ...form.role,
+                                  permissions: updatedPermissions,
+                                },
+                              });
+                            }}
                             disabled={isEditing !== role.id}
                             inputProps={{ "aria-label": "ant design" }}
                             checked={isPermissionAssigned}
@@ -203,6 +229,7 @@ const RoleAkses = () => {
                   })}
                 </Box>
               </AccordionDetails>
+
               <AccordionActions>
                 {isEditing === role.id ? (
                   <Button variant="contained" color="secondary" onClick={handleUpdateRole}>
@@ -218,6 +245,11 @@ const RoleAkses = () => {
           ))
         )}
       </Box>
+      <Snackbar open={openSuccessSnackbar} autoHideDuration={3000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
+        <Alert onClose={handleCloseSnackbar} severity="success" variant="filled" sx={{ width: "100%" }}>
+          Berhasil update role.
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

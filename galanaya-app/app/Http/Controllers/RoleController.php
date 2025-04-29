@@ -42,6 +42,29 @@ class RoleController extends Controller
         ], 201);
     }
 
+    public function updateRolesAndPermissions(Request $request, $roleId)
+    {
+        $validated = $request->validate([
+            'role.name' => 'required|string|unique:roles,name,' . $roleId,
+            'role.permissions' => 'required|array',
+            'role.permissions.*.name' => 'required|exists:permissions,name',
+        ]);
+
+        $roleData = $validated['role'];
+
+        $role = Role::findOrFail($roleId);
+
+        $permissionNames = collect($roleData['permissions'])->pluck('name')->toArray();
+
+        $role->syncPermissions($permissionNames);
+
+        return response()->json([
+            'message' => 'Role updated successfully',
+            'role' => $role,
+            'permissions' => $role->permissions->pluck('name'),
+        ]);
+    }
+
     public function getRolesAndPermissions(Request $request)
     {
         $roles = Role::with('permissions')->get();

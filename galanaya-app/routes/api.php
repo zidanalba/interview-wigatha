@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::group(['prefix' => 'role'], function () {
             Route::get('/', [RoleController::class, 'getRoles']);
             Route::post('/', [RoleController::class, 'storeRole']);
+            Route::put('{roleId}', [RoleController::class, 'updateRolesAndPermissions']);
         });
 
         Route::group(['prefix' => 'roles-and-permissions'], function () {
