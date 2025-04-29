@@ -44,17 +44,22 @@ class UserController extends Controller
     public function getUsers(Request $request) {
         $perPage = $request->get('per_page', 10);
 
+        $businessUnitIds = $request->get('accessible_business_unit_ids');
+
         $users = User::with('roles', 'businessUnits')
-                 ->orderBy('created_at', 'desc')
-                 ->paginate($perPage);
+        ->when($businessUnitIds, function ($query) use ($businessUnitIds) {
+            $query->whereHas('businessUnits', function ($q) use ($businessUnitIds) {
+                $q->whereIn('business_units.id', $businessUnitIds);
+            });
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate($perPage);
 
-        $users->getCollection()->transform(function ($user) {
-            $user->role_name = $user->roles->pluck('name')->join(", ");
-
-            unset($user->roles);
-
-            return $user;
-        });
+    $users->getCollection()->transform(function ($user) {
+        $user->role_name = $user->roles->pluck('name')->join(", ");
+        unset($user->roles);
+        return $user;
+    });
 
         return response()->json([
             'message' => 'Users retrieved successfully.',

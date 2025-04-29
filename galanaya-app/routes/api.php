@@ -29,7 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'master'], function () {
         Route::group(['prefix' => 'user'], function () {
             Route::post('/', [UserController::class, 'storeUser']);
-            Route::get('/', [UserController::class, 'getUsers']);
+            Route::get('/', [UserController::class, 'getUsers'])->middleware('filter.business.unit');
             Route::get('check-email', [UserController::class, 'checkEmail']);
 
             Route::group(['prefix' => '{userId}'], function () {
