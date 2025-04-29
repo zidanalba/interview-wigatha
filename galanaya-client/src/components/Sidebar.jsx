@@ -20,6 +20,7 @@ import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import { Link, useLocation } from "react-router-dom";
 import { tokens } from "../theme";
 import { useSelector } from "react-redux";
+import useAuth from "../store/useAuth";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -41,13 +42,17 @@ const Sidebar = () => {
 
   const location = useLocation();
 
+  const { permissions } = useAuth();
+
+  const hasPermission = (perm) => permissions.includes(perm);
+
   const menuSections = [
     {
       title: "Settings",
       items: [
-        { title: "User", to: "/users", icon: <PeopleAltOutlinedIcon /> },
-        { title: "Role Akses", to: "/role-akses", icon: <VpnKeyOutlinedIcon /> },
-      ],
+        { title: "User", to: "/users", permission: "view_users", icon: <PeopleAltOutlinedIcon /> },
+        { title: "Role Akses", to: "/role-akses", permission: "view_role_akes", icon: <VpnKeyOutlinedIcon /> },
+      ].filter((item) => !item.permission || hasPermission(item.permission)),
     },
   ];
 

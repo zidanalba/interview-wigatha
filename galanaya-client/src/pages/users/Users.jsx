@@ -7,6 +7,7 @@ import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import api from "../../utils/axios";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import useAuth from "../../store/useAuth";
 
 const rows = [
   { id: "1", name: "Zidan", email: "zidan@example.com" },
@@ -27,6 +28,10 @@ const Users = () => {
   const [userToDeleteName, setUserToDeleteName] = useState("");
   const token = useSelector((state) => state.auth.token);
   const navigate = useNavigate();
+
+  const { permissions } = useAuth();
+  const hasPermission = (perm) => permissions.includes(perm);
+  const hasAnyPermission = (permList) => permList.some((p) => hasPermission(p));
 
   const columns = [
     { field: "name", headerName: "Name", flex: 1 },
@@ -82,28 +87,35 @@ const Users = () => {
       headerName: "Actions",
       sortable: false,
       filterable: false,
-      renderCell: (params) => (
-        <Box
-          display="flex"
-          gap={1}
-          alignItems="center"
-          justifyContent="center"
-          sx={{
-            height: "100%",
-            minHeight: "36px",
-          }}
-        >
-          <Button size="small" color="secondary" variant="outlined" onClick={() => handleEdit(params.row)}>
-            Edit
-          </Button>
-          <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(params.row)}>
-            Delete
-          </Button>
-        </Box>
-      ),
+      permissions: ["view_user_detail", "delete_users"],
+      renderCell: (params) => {
+        const canView = hasPermission("view_user_detail");
+        const canEdit = hasPermission("update_users");
+        const canDelete = hasPermission("delete_users");
+
+        return (
+          <Box display="flex" gap={1} alignItems="center" justifyContent="center" sx={{ height: "100%", minHeight: "36px" }}>
+            {canView && (
+              <Button size="small" color="secondary" variant="outlined" onClick={() => handleEdit(params.row)}>
+                {canEdit ? "Edit" : "Detail"}
+              </Button>
+            )}
+            {canDelete && (
+              <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(params.row)}>
+                Delete
+              </Button>
+            )}
+          </Box>
+        );
+      },
       width: 200,
     },
   ];
+
+  const filteredColumns = columns.filter((col) => {
+    if (!col.permissions) return true;
+    return hasAnyPermission(col.permissions);
+  });
 
   const handleEdit = (user) => {
     navigate(`/users/edit/${user.id}`);
@@ -187,9 +199,11 @@ const Users = () => {
             }}
             variant="standard"
           />
-          <Button sx={{ ml: 2 }} variant="outlined" startIcon={<AddOutlinedIcon />} color="success" onClick={() => navigate("/users/add")}>
-            Tambah
-          </Button>
+          {hasPermission("create_users") && (
+            <Button sx={{ ml: 2 }} variant="outlined" startIcon={<AddOutlinedIcon />} color="success" onClick={() => navigate("/users/add")}>
+              Tambah
+            </Button>
+          )}
         </Box>
       </Box>
       <DataGrid
@@ -201,7 +215,7 @@ const Users = () => {
         disableColumnResize={true}
         disableColumnSorting
         rows={users}
-        columns={columns}
+        columns={filteredColumns}
         loading={loading}
         pagination
         paginationMode="server"

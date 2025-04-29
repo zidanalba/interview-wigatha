@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [RoleController::class, 'getRoles']);
             Route::post('/', [RoleController::class, 'storeRole']);
             Route::put('{roleId}', [RoleController::class, 'updateRolesAndPermissions']);
+            Route::delete('{roleId}', [RoleController::class, 'destroyRole']);
         });
 
         Route::group(['prefix' => 'roles-and-permissions'], function () {

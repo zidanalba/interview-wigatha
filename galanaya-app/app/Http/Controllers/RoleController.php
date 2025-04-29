@@ -87,4 +87,24 @@ class RoleController extends Controller
             'data' => $data,
         ]);
     }
+
+    public function destroyRole(Request $request, $roleId)
+    {
+        try {
+            $role = Role::findOrFail($roleId);
+
+            $role->permissions()->detach();
+
+            $role->delete();
+
+            return response()->json([
+                'message' => 'Role deleted successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Role unsuccessfully deleted.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

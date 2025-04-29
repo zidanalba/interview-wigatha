@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography, styled, Switch, CircularProgress, IconButton, AccordionActions, Alert, Snackbar } from "@mui/material";
+import { Box, Button, Stack, Typography, styled, Switch, CircularProgress, IconButton, AccordionActions, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Fade from "@mui/material/Fade";
@@ -8,6 +8,7 @@ import AccordionDetails, { accordionDetailsClasses } from "@mui/material/Accordi
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import api from "../../utils/axios";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import useAuth from "../../store/useAuth";
 
 const RoleAkses = () => {
   const [expanded, setExpanded] = useState(false);
@@ -20,7 +21,23 @@ const RoleAkses = () => {
 
   const [permissions, setPermissions] = useState([]);
 
+  const [openRoleDialog, setOpenRoleDialog] = useState(false);
+
   const [openSuccessSnackbar, setOpenSuccessSnackbar] = useState(false);
+
+  const { permissions: userPermissions } = useAuth();
+  const hasPermission = (perm) => userPermissions.includes(perm);
+  const canCreate = hasPermission("create_role_akes");
+  const canEdit = hasPermission("edit_role_akes");
+  const canDelete = hasPermission("delete_role_akes");
+
+  const handleClickRoleDialogOpen = () => {
+    setOpenRoleDialog(true);
+  };
+
+  const handleClickRoleDialogClose = () => {
+    setOpenRoleDialog(false);
+  };
 
   const handleCloseSnackbar = (event, reason) => {
     if (reason === "clickaway") {
@@ -143,6 +160,18 @@ const RoleAkses = () => {
     }
   };
 
+  const handleDeleteRole = async (roleId) => {
+    if (!window.confirm("Yakin ingin menghapus role ini?")) return;
+
+    try {
+      await api.delete(`master/role/${roleId}`);
+      setOpenSuccessSnackbar(true);
+      loadRolesPermissions(); // refresh list
+    } catch (err) {
+      alert("Gagal menghapus role");
+    }
+  };
+
   useEffect(() => {
     loadPermissions();
     loadRolesPermissions();
@@ -152,9 +181,11 @@ const RoleAkses = () => {
     <Box ml={2} mr={2}>
       <Box display="flex" justifyContent="space-between" marginBottom={2}>
         <Typography variant="h4">Role Akses</Typography>
-        <Button variant="outlined" startIcon={<AddOutlinedIcon />} color="success">
-          Tambah Role dan Akses
-        </Button>
+        {canCreate && (
+          <Button variant="outlined" onClick={handleClickRoleDialogOpen} startIcon={<AddOutlinedIcon />} color="success">
+            Tambah Role dan Akses
+          </Button>
+        )}
       </Box>
       <Box>
         {loadingPermissions ? (
@@ -236,9 +267,18 @@ const RoleAkses = () => {
                     Update
                   </Button>
                 ) : (
-                  <Button variant="outlined" color="secondary" onClick={() => handleEditRole(role)}>
-                    Edit
-                  </Button>
+                  <>
+                    {canEdit && (
+                      <Button variant="outlined" color="secondary" onClick={() => handleEditRole(role)}>
+                        Edit
+                      </Button>
+                    )}
+                    {/* {canDelete && ( */}
+                    <Button variant="outlined" color="error" onClick={() => handleDeleteRole(role.id)}>
+                      Delete
+                    </Button>
+                    {/* )} */}
+                  </>
                 )}
               </AccordionActions>
             </Accordion>
@@ -250,6 +290,68 @@ const RoleAkses = () => {
           Berhasil update role.
         </Alert>
       </Snackbar>
+      <Dialog open={openRoleDialog} onClose={handleClickRoleDialogClose} aria-labelledby="form-dialog-title" fullWidth maxWidth="sm">
+        <DialogTitle id="form-dialog-title">Tambah Role Baru</DialogTitle>
+        <DialogContent>
+          <TextField color="secondary" autoFocus margin="dense" id="name" label="Nama Role" type="text" fullWidth value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+
+          <Box mt={3} display="flex" flexDirection="column" gap={2}>
+            <Typography variant="subtitle1" gutterBottom>
+              Akses yang Diizinkan
+            </Typography>
+            {permissions.map((permission) => {
+              const isPermissionSelected = form.permissions?.includes(permission.name);
+
+              return (
+                <Box key={permission.id} display="flex" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2">{permission.name}</Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography color={!isPermissionSelected ? "error" : "textSecondary"}>Tidak Aktif</Typography>
+                    <AntSwitch
+                      checked={isPermissionSelected}
+                      onChange={(e) => {
+                        const updatedPermissions = e.target.checked ? [...(form.permissions || []), permission.name] : (form.permissions || []).filter((perm) => perm !== permission.name);
+
+                        setForm({
+                          ...form,
+                          permissions: updatedPermissions,
+                        });
+                      }}
+                    />
+                    <Typography color={isPermissionSelected ? "success" : "textSecondary"}>Aktif</Typography>
+                  </Stack>
+                </Box>
+              );
+            })}
+          </Box>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleClickRoleDialogClose} color="secondary">
+            Batal
+          </Button>
+          <Button
+            onClick={async () => {
+              try {
+                await api.post("master/role", {
+                  name: form.name,
+                  permissions: form.permissions || [],
+                });
+                setOpenSuccessSnackbar(true);
+                handleClickRoleDialogClose();
+                setForm({ name: "", permissions: [] });
+                loadRolesPermissions();
+              } catch (err) {
+                alert("Gagal menambahkan role baru");
+              }
+            }}
+            variant="contained"
+            color="primary"
+          >
+            Simpan
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

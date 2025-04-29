@@ -26,6 +26,7 @@ import api from "../../utils/axios";
 import { tokens } from "../../theme";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import { CircularProgress } from "@mui/material";
+import useAuth from "../../store/useAuth";
 
 const UsersForm = () => {
   const theme = useTheme();
@@ -51,6 +52,12 @@ const UsersForm = () => {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const navigate = useNavigate();
+
+  const { permissions } = useAuth();
+  const hasPermission = (perm) => permissions.includes(perm);
+  const canView = hasPermission("view_user_detail");
+  const canUpdate = hasPermission("update_users");
+  const isReadonly = isEdit && canView && !canUpdate;
 
   const checkEmailExists = async (email) => {
     setCheckingEmail(true);
@@ -249,7 +256,7 @@ const UsersForm = () => {
   return (
     <Box m={2}>
       <Box>
-        <Typography variant="h4">{isEdit ? "Edit User" : "Add User"}</Typography>
+        <Typography variant="h4">{isEdit ? (isReadonly ? "Lihat Detail User" : "Edit User") : "Tambah User"}</Typography>
       </Box>
       <Box>
         <form onSubmit={handleSubmit}>
@@ -260,7 +267,7 @@ const UsersForm = () => {
             margin="normal"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            disabled={loadingUser}
+            disabled={loadingUser || isReadonly}
             InputProps={{
               endAdornment: <InputAdornment position="end">{loadingUser && <CircularProgress size={20} color="secondary" />}</InputAdornment>,
             }}
@@ -274,7 +281,7 @@ const UsersForm = () => {
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             error={!!emailError}
             helperText={emailError || (checkingEmail ? "Memeriksa email..." : "")}
-            disabled={loadingUser}
+            disabled={loadingUser || isReadonly}
             InputProps={{
               endAdornment: <InputAdornment position="end">{(checkingEmail || loadingUser) && <CircularProgress size={20} color="secondary" />}</InputAdornment>,
             }}
@@ -291,7 +298,9 @@ const UsersForm = () => {
                     <CircularProgress size={24} color="secondary" />
                   </Box>
                 ) : units.length > 0 ? (
-                  units.map((unit) => <FormControlLabel key={unit.id} control={<Checkbox checked={form.business_units.includes(unit.id)} onChange={() => handleUnitCheckboxChange(unit.id)} color="secondary" />} label={unit.name} />)
+                  units.map((unit) => (
+                    <FormControlLabel key={unit.id} control={<Checkbox disabled={isReadonly} checked={form.business_units.includes(unit.id)} onChange={() => handleUnitCheckboxChange(unit.id)} color="secondary" />} label={unit.name} />
+                  ))
                 ) : (
                   <Typography variant="body2" color="textSecondary">
                     Belum ada unit bisnis terdaftar.
@@ -310,38 +319,43 @@ const UsersForm = () => {
                     <CircularProgress size={24} color="secondary" />
                   </Box>
                 ) : roles.length > 0 ? (
-                  roles.map((role) => <FormControlLabel key={role.id} control={<Checkbox checked={form.roles.includes(role.id)} onChange={() => handleRoleCheckboxChange(role.id)} color="secondary" />} label={role.name} />)
+                  roles.map((role) => (
+                    <FormControlLabel key={role.id} control={<Checkbox disabled={isReadonly} checked={form.roles.includes(role.id)} onChange={() => handleRoleCheckboxChange(role.id)} color="secondary" />} label={role.name} />
+                  ))
                 ) : (
                   <Typography variant="body2" color="textSecondary">
                     Belum ada role terdaftar.
                   </Typography>
                 )}
               </FormGroup>
-
-              <Box mt={1}>
-                <Button
-                  variant="text"
-                  color="success"
-                  size="small"
-                  startIcon={<AddOutlinedIcon />}
-                  onClick={() => navigate("/role-akses/add")} // ganti dengan route buatanmu
-                >
-                  Buat Role Baru
-                </Button>
-              </Box>
+              {hasPermission("create_role_akes") && (
+                <Box mt={1}>
+                  <Button
+                    variant="text"
+                    color="success"
+                    size="small"
+                    startIcon={<AddOutlinedIcon />}
+                    onClick={() => navigate("/role-akses/add")} // ganti dengan route buatanmu
+                  >
+                    Buat Role Baru
+                  </Button>
+                </Box>
+              )}
             </Box>
             <Box width="100%">
               <Typography variant="h5">Status</Typography>
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                 <Typography color={!form.is_active ? "error" : "textSecondary"}>Tidak Aktif</Typography>
-                <AntSwitch inputProps={{ "aria-label": "ant design" }} checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} disabled={loadingUser} />
+                <AntSwitch inputProps={{ "aria-label": "ant design" }} checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} disabled={loadingUser || isReadonly} />
                 <Typography color={form.is_active ? "success" : "textSecondary"}>Aktif</Typography>
               </Stack>
             </Box>
           </Box>
-          <Button color="secondary" type="submit" variant="outlined" fullWidth sx={{ mt: 2 }}>
-            {isEdit ? "Update" : "Create"}
-          </Button>
+          {(!isEdit && hasPermission("create_users")) || (isEdit && hasPermission("update_users")) ? (
+            <Button color="secondary" type="submit" variant="outlined" fullWidth sx={{ mt: 2 }}>
+              {isEdit ? "Update" : "Create"}
+            </Button>
+          ) : null}
         </form>
       </Box>
       <Dialog open={successDialogOpen} onClose={() => setSuccessDialogOpen(false)}>
